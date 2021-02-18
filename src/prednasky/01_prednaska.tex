@@ -1,0 +1,141 @@
+\section{\texorpdfstring{Primitives}{Primitives}}
+\vspace{5mm}
+\large
+
+\subsection{Basics, symmetric and asymmetric ciphers}
+
+\begin{agreement}
+	\textbf{Alice} and \textbf{Bob} are communicating parties, used only as abstraction in some protocol.
+
+	Should not be different person. E.g. disk encryption for 10 years means that the same person will decrypt in the future. Therefore Alice and Bob are the same person but time is different.
+\end{agreement}
+
+\begin{definition}
+	Passive attacker has an access to the communication line and listens trying to figure out text that was sent.
+\end{definition}
+\begin{definition}
+	Active attacker can not only listen to the communication but also alter the bits.
+\end{definition}
+
+\begin{agreement}
+	Passive attacker is represented by \textbf{Eve}. Active attacker is represented by \textbf{Mallory} or \textbf{Man in the middle}.
+\end{agreement}
+
+\begin{definition}
+	Plain text - not encrypted information that is to be delivered to from Alice to Bob.
+\end{definition}
+\begin{definition}
+	Cipher text - encrypted plain text. Ideally properties of the Cipher text should not reveal any info about Plain text.
+\end{definition}
+
+\begin{definition}
+	Encryption box (function) - converts Plain text to Cipher text. We want the box to be parametrized by \textbf{Key}.
+
+	Decryption box (function) - converts Cipher text back to plain text.
+\end{definition}
+
+Several reasons to keep Encryption algorithm public and the Key secret (Kerckhoffs Principle):
+\begin{enumerate}
+	\item Good cyphers are hard to find. As of know we know 10 strong cyphers.
+	\item Well known cyphers are better analyzed. We cannot proof that any cypher is strong, only hope no weakness is found.
+	\item Information tend to leak, there has already been cases of weak secret cyphers(cell phones protocol).
+		Secondly, it is much easier to recover from leaked Key than cypher. For some protocols new Keys are generated periodically.
+\end{enumerate}
+
+\begin{definition}
+	Symmetric encryption. Firstly we need Encryption function (E):
+	\[ E:Plain = \{0,1\}^n \times Key = \{0,1\}^k \to Cipher=\{0,1\}^n \]
+	Denote as $E_k(x) = y$.
+
+	Decryption function (D):
+	\[ D:\{0,1\}^n \times \{0,1\}^k \to \{0,1\}^n \]
+
+	Properties:
+	\[ \forall k \forall x: D(E(x, k), k) = x \iff E = D^{-1} \]
+
+	Symmetric because Keys on the both sides are the same.
+\end{definition}
+
+We can say that E permutes $\{0,1\}^n$. We want E to behave as a random permutation, more formally there should be no \textbf{polynomial} algorithm to distinguish between Cipher text and a Random permutation.
+Ciphers having that property are called Secure.
+
+\begin{example}
+	\textbf{Ceasars cipher} - shift alphabet by some constant. Not secure at all, alphabet is that small so we can try all possible constants.
+\end{example}
+
+Symmetric encryption has several disadvantages:
+\begin{enumerate}
+	\item For multiparties communication, new key is required for every pair. Distributing such keys secretly is not trivial.
+	\item Plain text size can be derived from Cipher text size.
+\end{enumerate}
+
+\begin{definition}
+	Asymmetric cipher: E, D are parametrized by different keys. Compatible E and D should still able to decode encoded text.
+	\[ \forall (k_e, k_d) \forall x: D(E(x, k_e), k_d) = x \]
+
+	However, deriving one key from another in pair $(k_e, k_d)$ should be impossible for the attacker.
+	Ideally only one $k_d$ should correspond to a particular $k_e$.
+\end{definition}
+
+Typical uses:
+\begin{enumerate}
+	\item Multiparties communication. Everybody generates a key pair. $k_e$ are public, $k_d$ are private.
+		Alice encrypts message with Bobs $k_e$, Bob decrypts it with his own $k_d$.
+		Key distribution is again a problem. Alice cannot check that publicly available key, that is marked as Bobs is really created by Bob and not by the attacker.
+		No universal solution :(.
+	\item Signature scheme.
+		Alice signs a document with private $k_{sign}$. Everyone has access to $k_{verify}$ to convert to Plain text. Therefore, anybody can check that message was produced by Alice.
+		Deals with active attackers. $k_e$ is private, $k_d$ is public.
+	\item Both schemes could be combined, but we have to make sure that keys are different.
+\end{enumerate}
+
+Main disadvantage if the Asymmetric ciphers is the speed of computation, in general they are slow. At least $\bigO(n^2)$.
+Furthermore, size of the message is bounded by the size of the Key. So, we cannot encrypt arbitrarily long messages.
+
+\subsection{Hash functions}
+\begin{definition}
+	Hash function
+	\[ h: \{0, 1\}^{\ast} \to \{0, 1\}^b, b \in \N \]
+	Where b is a parameter of h, fixed \# of bits.
+\end{definition}
+\begin{propertiesBasic}
+	Good hash function properties:
+	\begin{enumerate}
+		\item Impossible (computationally infeasible) to invert. Meaning, for given $y$ cannot find $x: h(x) = y$.
+		\item Impossible to find collisions \textbf{called collision resistance}: $x \ne y: h(x) = h(y)$.
+		\item Random hash function. Impossible to distinguish from random function.
+	\end{enumerate}
+\end{propertiesBasic}
+
+\begin{example}
+	With hash functions we can improve \textbf{signature scheme}. One can use hash function to allow multiple signatures on the same document.
+	Alice send plain text X, then computes $E(h(X), k_{sign})$. Bob recomputes hash of the plain text and compares it with the has sent by Alice. (md5?)
+
+	Such scheme requires hash function with low probability to find collisions. Otherwise the attacker will ask Alice to sign $x: h(x) = h(y)$, then send $y$ to Bob.
+\end{example}
+
+\begin{example}
+	\textbf{Challenge-response authentication}
+
+	Let's assume, Alice and Bob knows secret password X which will serve as a verification before communication starts.
+	Alice cannot just send $h(X)$, because passive attacker could write down the password and trick Bob with it pretending to be Alice.
+
+	Bob issues challenge C first (some random text). Alice produces a concatenation of 2 strings and uses hash: $h(X | C)$.
+\end{example}
+
+\begin{definition}
+	\textbf{Nonce} - number used once. Long random number, e.g. Challenge in the Challenge-response authentication.
+\end{definition}
+
+
+\subsection{Random generator(RNG)}
+Unfortunately, we can only create computationally indistinguishable RNG from random function. Should be:
+\begin{enumerate}
+	\item Unpredictable, even if attacker listened to the Gb of previous output.
+	\item Cannot be influenced (e.g. by heating the Server room)
+\end{enumerate}
+
+Combining symmetric and asymmetric cipher. Firstly, Alice generate $k_{sym}$ random, one per message.
+Then sends $E_{sym}(X, k_{sym}, E_{asym}(k_{sym}, k_{asym}) $.
+
+Bob takes 2nd part of the message, decrypts $k_{sym}$ using asymmetric D. Then he decrypts first part of the message by $k_{sym}$.

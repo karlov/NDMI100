@@ -1,0 +1,131 @@
+\section{\texorpdfstring{Perfect security, secret sharing, symmetric ciphers}{Perfect security, secret sharing, symmetric ciphers}}
+\vspace{5mm}
+\large
+
+\subsection{Perfect Security}
+%2nd lecture, but belongs to 3rd by topic
+\begin{definition}
+	\textbf{One time pad (also known as Vernam's Cipher)} - is the only! cipher, we can prove secure.
+
+	The key $k \in \{ 0, 1 \}^n $ is chosen uniformly at random. The message $x \in \{ 0, 1 \}^n$.
+
+	cipher text is defined as
+	\[ y = x \oplus k \iff y_i = x_i \oplus k_i \]
+
+	Decryption, using the associativity of XOR.
+	\[ y \oplus k = (x \oplus k) \oplus k = x \oplus (k \oplus k) = x \]
+	Therefore encryption function is the same as decryption.
+
+	From the observation \cref{random_bit}, XOR with random bits produces uniform random bit.
+	Only the size of the information could be deduced from the cipher text. Extremely strong result!
+	No matter how much computational power the attacker has, he cannot deduce plain text from cypher text.
+
+	For other ciphers we can only prove that brute force attack is extremely slow, or $P = NP$ should be true to break the cipher.
+
+	Such property is called \textbf{Informational-theoretic security} or \textbf{perfect security}.
+
+\end{definition}
+
+\begin{definition}\label{gen_one_time_p}
+	\textbf{Generilized one-time pad}
+
+	Consider some group additive G $(G, +, 0, -)$.
+
+	We pick some $k \in G$ randomly, then
+	\[ E(x, k) = x + k, D(y, k) = y - k = y + (k)^{-1} \]
+
+	For example we can choose $\Z_t$.
+\end{definition}
+
+\begin{definition}
+	A symmetric cipher is \emph{perfectly secure} iff
+	\[ \forall x \forall y Pr_k[ E(x, k) = y ] = Pr_k[ D(y, k) = x ] = const \]
+
+	For any plain text, all cipher texts should be equally likely.
+\end{definition}
+
+\begin{example}
+	For example, for generalized one time pad \cref{gen_one_time_p}
+	\[ \forall x \forall y \exists !k: x + k = y \Rightarrow k = y + x^{-1} \]
+
+	Therefore the probability is $\frac{1}{|G|}$. As a result, one time pad is perfectly secure.
+\end{example}
+
+\begin{properties}
+Usefulness of the OTP:
+	\begin{enumerate}
+		\item never use same key twice. Since xor of the cypher text is the same as xor of the plain text.
+		\[ x_1 \oplus k = y_1 \land x_2 \oplus k = y_2 \Rightarrow y_1 \oplus y_2 = x_1 \oplus k \oplus x_2 \oplus k = x_2 \oplus x_1 \]
+		\item Codebook - a long list of generated Keys.
+			It has already happen during WW2, soviet agents ran out of keys in codebook and started to used same keys from the beginning.
+			Not only were Americans able to read new messages, they have also decoded old ones.
+		\item replace randomness by pseudorandomness. A key is produced by PRNG (pseudo random number generator) which is parametrized by another key and ideally by nonce (initialization vector).
+		\item if attacker changes specific bit of the cipher text same plain text bit is changed. Since XOR is done bit by bit.
+	\end{enumerate}
+\end{properties}
+
+\begin{theorem}[Perfect cipher]
+	If \# of keys $<$ \# of messages $\Rightarrow$ the cipher is not perfectly secure.
+\end{theorem}
+\begin{proof}
+	Let's take some cipher text $y$ and get all plain text that a mapped by the inverse of the encryption function to the some $T \subset $ Plain Texts. Since \# of keys $<$ \# of messages $\Rightarrow$ some of the keys $\notin T$.
+	Therefore
+	\[ Pr_k[x \notin T \land D(y, k) = x] = 0, Pr_k[x \in T \land D(y, k) = x] > 0 \]
+	And the distribution of keys are not uniform. Cipher is not perfectly secure by the definition.
+\end{proof}
+
+\begin{note}
+	Perfect security is also called \textbf{Shannon security}. He is the father of the information theory and cryptography.
+\end{note}
+
+\subsection{Secret Sharing}
+
+Assume we have a secret information. We want to break secret into shared. The whole secret can be restored only having all the pieces.
+We can use the OTP:
+
+$S_1, ..., S_{k-1}$ are random numbers. $S_k = x \oplus S_1 \oplus ... \oplus S_{k-1}$.
+Shareholders can decode x by xoring all $S_i$. Otherwise they will get random numbers.
+
+\begin{definition}
+	$(k, l)$ - threshold scheme. Split secret $x$ into $k$ shares $S_1, ..., S_k$.
+	Having any $l$ shared agents can decode $x$. However $X$ cannot be decoded with $< l$ \# of shares. No info should be given.
+\end{definition}
+
+\begin{example}
+	$(k, 2)$ scheme. Let F be finite field, the secret is a function $f = ax + b$ s.t.:
+	\[ f(0) = x, f(1) \in_R F \]
+
+	Geometrically, we have $x$ as the point with coordinates $(0, t)$ for some $t$.
+	All $S_i$ for a straight line. As line can be deduced by any 2 points, 2 agents can decode $x$ using their points $S_i$.
+
+	Distribution of the secrets $x$ is uniform $\Rightarrow$ perfectly secure.
+\end{example}
+
+Let's consider polynomials over field F.
+According to results from Algebra, a polynomial of degree $d$ has at most $d$ roots.
+
+Graph of the polynomial is a set of values for every point $\in F$.
+Polynomials with the same graph share the roots $\Rightarrow$ should be equal.
+
+\begin{theorem}[Lagrange interpolation]
+	For every $x_1, ..., x_d, x_i \neq x_j, i \ne j, P(i) = 0$ distinct roots of P and $y_1, ..., y_d$
+	\[ \exists! P, deg(P) < d: \forall i\ P(x_i) = y_i \]
+\end{theorem}
+\begin{proof}
+	Let $ \overline{x} = (x_1, ..., x_d) \in F^d$ be a vector of coefficients of polynomial P, X is a set of all such vectors. $|X| = |F|^d$.
+
+	Let Y be a set of all choices of $y_i$, graphs of the polynomials.
+
+	Finally, let $f:X \to Y$ be a map from polynomials to graphs of polynomials. Which evaluates polynomial at d points.
+
+	Since polynomials with the same graph are equal, $f$ is injective. $|X| = |Y| \Rightarrow f$ is bijection.
+\end{proof}
+
+\begin{consequence}
+	Scheme based on graphs of the polynomials is perfectly secure, since according to the Lagrange theorem we have bijection between them $\Rightarrow$ uniform distribution.
+\end{consequence}
+
+\begin{example}
+	$(k, l)$ scheme. Instead of lines we pick some polynomial P, $deg(P) = d$. Then we randomly pick $k$ values of the P.
+	Having exactly $k$ shared agents can obtain P. Otherwise, all $X = P(0)$ are uniformly distributed.
+\end{example}

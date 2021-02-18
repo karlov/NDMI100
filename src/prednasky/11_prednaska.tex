@@ -1,0 +1,125 @@
+\section{\texorpdfstring{Practical}{Practical}}
+\vspace{5mm}
+\large
+
+\subsection{Secure channel}
+Assume: everybody has his secret key + everybody else's public key. How to init secure channel?
+
+\paragraph{1st version}
+\begin{enumerate}
+	\item Exchange nonces
+	\item A generates master secret $M$ randomly
+	\item A encrypts $M$ using B's public key, sends to B
+	\item Both signs steps 1-3 and exchange signatures (to ensure nobody's playing A and B role in the middle)
+\end{enumerate}
+
+\paragraph{2nd version}
+D-H exchange for $M$. This option is better, since it gives us \emph{forward security}.
+
+If attacker decrypts $M$ in 1st version he can decrypt all historic communication.
+For D-H master key is never sent over the network (only the signature), so the attacker does not have access to plain text.
+
+\subsection{Practical issues of secure SW}
+\begin{itemize}
+	\item We do not know how to design secure SW. (complexity is the worst enemy)
+	\item We do not know how to implement secure SW
+	\item Debugging by testing is not enough. As it covers only known cases 1) random input 2) prepared structure.
+		Coverage analysis can help. Fuzz testing (random modifications of the input)
+	\item We need proofs (model checking), code reviews etc.
+	\item Using C is an issue (buffer overflows, strlncpy etc.)
+	\item Using languages other than C can be an issue (timing attacks by execution difference, complexity of compilers etc.)
+		Rust could be good option, or combination of Python + C.
+	\item Too many dependencies (libraries often designed for performance and usage but not security, firmware, HW)
+	\item Real attacker is much more powerful than in theory.
+\end{itemize}
+
+Real attacker types:\\
+1) Remote (via network).
+Can measure timing (side channel). For example if we compare MAC using memcmp in C (compares byte by byte in memory and stops at first difference).
+An attacker can modify signature and measure timings (or averages if difference is small). He needs $256 \cdot 32 \approx 8k$ and gets all bytes.
+
+Solution: compare using XOR ($sign[i] \oplus s[i]$). Make sure that compiler does not optimize this code!
+
+Another attack is file type interpretation. In Unix, no metadata is stored in disk.
+On the other side, Windows uses file extensions to choose program that opens file (can be misleaded by e.g. \emph{file.exe.jpg}).
+We can also create file which is a valid JPG and Java Byte code at the same time.
+
+Another issue are ambiguities:
+\begin{itemize}
+	\item Null terminated string vs Pascal strings (length + string). Copying 1st type to second can be fatal.
+	\item In UTF-8, char 'a' has 1 byte code (ASCII), 2,3,4-byte codes. Only 1 byte code is valid according to the standard.
+		Some implementations, however, tolerate all possibilities.
+	\item JSON parsing can lead to differences as no fixed standard exists. Solution: use more strict subset of JSON.
+	\item Differences in XML comments parsing led to problems in iOS $\Rightarrow$ avoid XML in security critical programs.
+\end{itemize}
+
+DDOS attack: flood server by messages.
+
+2) Attacker in the same room. He is able to:
+\begin{itemize}
+	\item Measure power consumption (can help to distinguish $x^e \mod m$ vs $x^2 x $).
+	\item Measure sound (depends on load), keyboard clicks etc.
+	\item Thermal (keys are wormer after press)
+	\item Radio emissions (voltage spikes), magnetic emissions.
+\end{itemize}
+
+3) Attacker with access to PC (mo way to defend)
+
+Can install a spy bug (HW device), e.g. keyboard that logs keystrokes. Or even extract memory modules, put the into freezer and extract data.
+
+4) Program on the machine (e.g. JS)
+
+Mainly exploits HW side effects (e.g. shared caches) or HW bugs (meltdown, spectra etc.).
+Cache side effects could be used to extract AES key from other program.
+
+\begin{note}
+	Computers designed for security use simple CPUs.
+\end{note}
+
+\subsection{Storing secrets}
+1) Keys in memory. Can be stored to disk (swap). Can be sent over network by mistake (e.g. data remained in non initialized variable).
+
+Precaution:
+\begin{itemize}
+	\item Erase secrets when not needed
+	\item Linux mlock to disable swapping pages
+	\item Disable core dumps
+	\item Split secrets (store in 2 places)
+\end{itemize}
+
+2) Data on disk (how to secure erase?)
+
+Basic delete just erases the metadata and not the information.
+Override does not work, as disk optimization can move new information to different place in memory (also defragmentation). Even overriding the whole disk does not help because of bad blocks (they remember some data).
+
+Also, low level details can tell if bit was 1/0 (voltage and other parameters).
+
+\begin{note}
+	Nobody knows how to erase data on SSD because of optimization algorithms.
+\end{note}
+
+Although, there are disks, that support secure erase function, manifacturers are cheating and do not implement it property. Quality of randomness is also an issue.
+
+\paragraph{Dedicated secure HW}
+Chip cards, crypto modules.
+
+Even though, companies produce such hardware, we cannot trust them fully. As there were examples of such companies working for CIA and other agencies.
+
+\paragraph{Keeping state}
+
+\begin{itemize}
+	\item Keep nonces
+	\item Keep RNG state (after reboot, crash or from backup)
+	\item First boot (many WiFis are identical, can be cracked at first boot).
+		Solution: distribute different states among identical devices.
+\end{itemize}
+
+\subsection{Practical recommendations}
+
+\begin{itemize}
+	\item Everything can be compromised.
+	\item Ideas real security.
+	\item Slow down the attacks in order to catch attackers easier.
+	\item Make an attack visible (logs, monitoring etc.).
+	\item Increase cost of attacks by making it $>$ cost of secrets.
+\end{itemize}

@@ -1,0 +1,64 @@
+\section{\texorpdfstring{Random number generators}{Random number generators}}
+\vspace{5mm}
+\large
+
+\begin{definition}
+	Secure RNG - even knowing complete past output, next bit is unpredictable $\Rightarrow$ statistically uniform.
+\end{definition}
+
+We have 2 type of random number generators:\\
+a) PRNG: e.g. block cipher in CTR mode. Key should be changed on regular basis.\\
+b) physical randomness (we have no proof such thing exists).
+Examples:
+
+\begin{itemize}
+	\item Thermal noise or resister/diode
+	\item Radioactive decay (count \# of particles)
+	\item Radio noise
+	\item Lava lamp (chaotic movement)
+	\item Ring oscillator (attacker can observer)
+	\item Precise timings of keystrokes, mouse movements or network packages (attacker can record or flood packages)
+\end{itemize}
+
+\begin{note}
+	Entropy in physical processes is not as high as we can expect.
+	Therefore, a combination of PRNG and physical randomness is the best choice.
+\end{note}
+
+Problem with PRGN + rekey: if a key or state of the PRNG is compromised, adding 1 bit or physical entropy does not help. Attacher can try both options (guess) and track the state. Therefore entropy should be mixed in large batches.
+
+\subsection{Fortuna RNG}
+\begin{definition}
+	Fortuna RGN has a \emph{Generator} and \emph{Accumulator}.
+
+	Generator is based on block cipher (AES) which encrypts a 128-bit counter (never overflows). After $2^{16}$ block we rekey and using the next 2 blocks as key.
+
+	Trick: do not reset the counter to avoid short cycles.
+
+	Accumulator: gets entropy from other sources and resets Generator periodically.
+	Has $p_0, ..., p_{31}$ pods of entropy. External RNG is mixed to the pods in Round-Robin order: assign RNG to $p_i$, move to the next.
+	Such process distributes RNG among the pods.
+
+	After 100ms we mix pods into Generator. In the $j$-th mixing only selected pods are used, e.g. with index $2^j/i$.
+\end{definition}
+
+Assume that $\rho = $ rate of input entropy, measured in bits per 100ms.
+If $\rho \geq 128 * 32 \Rightarrow p_0$ is enough for recovery. As at least 128 bit of entropy were put in $p_0$.
+If $ \rho \geq 128 * 32/2^i \Rightarrow p_i$ is enough to recover.
+
+To conclude, for any given rate of entropy Fortuna can recover after some time. Speed of recovery depends on entropy rate.
+
+\subsection{Secure channel}
+We use symmetric encryption to establish secure channel. Assume Alice and Bob share unique random key $k$.
+Alice sends $\{ m_i \}_0^n$ sequence of messages, Bob receives a subsequence and he is still able to know which one he got.
+On the other hand, attacker have no such info, except for length of the sequence.
+
+We use
+\begin{itemize}
+	\item Random IV for every message (public).
+	\item AES in CTR mode for encryption (alternatively ChaCha20).
+	\item MAC after encrypt.
+	\item Sequence numbers (inside MAC).
+	\item Key derivation function which generates encryption and MAC keys for both directions.
+		\[ h(k | id) \]
+\end{itemize}

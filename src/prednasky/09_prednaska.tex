@@ -1,0 +1,89 @@
+\section{\texorpdfstring{Algebra and Number theory}{Algebra and Number theory}}
+\vspace{5mm}
+\large
+
+\begin{theorem}[Invertibility of element]
+	$a \in \Z_n$ is invertible $\iff (a, n) = 1$.
+\end{theorem}
+\begin{proof}
+	For coprime $a, n$ we can use Extended Euclid algorithm and get the inverse using Bezout coefficients.
+
+	Otherwise, no solution exists.
+\end{proof}
+
+\begin{definition}
+	\[ \Z_N^{\ast} := \{ a \in \Z_N | (a, N) = 1 \} \]
+	Group of all invertible elements.
+\end{definition}
+
+\begin{theorem}[Lagrange]
+	If G is finite group, $H \leq G \Rightarrow |H|\ |\ |G|$.
+\end{theorem}
+
+\begin{theorem}[Fermat little]
+	For $p$ prime, $(x, p) = 1: x^{p-1} \equiv 1\mod p $.
+\end{theorem}
+
+\begin{theorem}[Euler]
+	For $N > 1$, $(x, N) = 1: x^{\varphi(N)} \equiv 1 \mod N$.
+\end{theorem}
+\begin{proof}
+	Consider
+	\[ 1 = x^0, x^1,..., x^k = 1 \]
+	All of them distinct and form a subgroup of $\Z_N^{\ast}$.
+
+	By Lagrange $k = |H|$ is a divisor of order of the group $\varphi(N)$.
+	\[ \varphi(N) = k\cdot l\]
+	So:
+	\[ x^{\varphi(N)} \equiv x^{kl} = (x^k)^l \equiv 1^l = 1\]
+
+\end{proof}
+
+\begin{theorem}[Chinese Remainder Theorem (CRT)]
+	For $n_1,..., n_k$ pairwise coprime, $n := \prod_i n_i$. Then
+	\[ \Z_{n_1} \times \Z_{n_2} \times ... \times \Z_{n_k} \simeq \Z_n \]
+\end{theorem}
+\begin{proof}
+	Proof for $k = 2$, continue by induction.
+
+	1) Consider
+	\[ f:\Z_n \to \Z_{n_1} \times \Z_{n_2}, f(x) = (x \mod n_1, x \mod n_2) \]
+	Firstly $f$ is injective:
+	\[ f(x) = f(y) \Rightarrow f(x - y) = (0,0) \]
+	Also $(x - y)$ is divisible by both $n_1, n_2 \Rightarrow (x - y)$ is divisible by $n_1 \cdot n_2 = n \Rightarrow y = x$.
+
+	Secondly $f$ is bijective as both sets have the same cardinality.
+
+	2) Constructive proof: given $(a,b)$, find $f(x) = (a,b)$.\\
+	Firslty, find
+	\[ u,v: f(u) = (0, 1) \land f(v) = (1, 0) \Rightarrow f(au + bv) = af(u) + b f(v) = (a,0) + (0,b) = (a,b) \]
+
+	\[ f(n_1) = (0, c_1) \]
+	If $c_1 = 1, v = n_1$. Otherwise
+	\[ f(c_1^{-1} \cdot n_1) = c_1^{-1} \cdot (0, c_1) = (0, 1) \]
+	Similarly obtain $f(n_2)$.
+\end{proof}
+Primality test (sketch)
+\begin{enumerate}
+	\item Generate $a \ne 0 \in_R \Z_n$
+	\item if $(a, n) \ne 1$ (Euclid witness)\\
+		return NO
+	\item if $a^{n - 1} \mod n \neq 1$ (Fermat witness)\\
+		retutn NO
+	\item YES.
+\end{enumerate}
+
+\begin{definition}
+	Carmichael number: $n$ is composite and
+	\[ a \in \Z_n^{\ast}: a^{n - 1} \mod n = 1 \]
+	Smallest 561.
+\end{definition}
+
+\begin{theorem}[Prime probability]
+	If $n$ is composite, but not Carmichael $\Rightarrow Pr_a[YES] \leq 1/2$.
+\end{theorem}
+\begin{proof}
+	\[ H := \{ a \in \Z_n^{\ast} | a^{n - 1} \mod n = 1 \} \]
+	Then $H \leq G$, as $H$ is not trivial subgroup. Therefore
+	\[ |H| \leq 1/2 \Z_n^{\ast} \]
+\end{proof}

@@ -1,0 +1,176 @@
+\section{\texorpdfstring{Auction protocol, attacks, Security level}{Auction protocol, attacks, Security level}}
+\vspace{5mm}
+\large
+\begin{observation}\label{random_bit}
+	Any fixed bit XOR random bit (uncorrelated with fixed bit) produces random bit.
+\end{observation}
+
+\begin{example}
+	\textbf{Bit commitment protocol}
+
+	Toss a coin over a phone call. We assume, that 2 parties communicate over some line.
+	They want to generate a random bit, however they do not trust each other.
+
+	If Alice sends her random bit to Bob, he send his random bit back, then XOR should produce random bit. However, Bob could cheat, and choose bit according to his need.
+
+	If Alice generates a random bit, then receives Bob's random bit, then she could cheat and change her bit in the process. Similarly for Bob.
+
+	So, we need better approach. Alice generates random word of fixed length, let's say 128 bit. $x \in \{ 0, 1 \} ^{128}$. Alice sends $h(x)$. Bob sends his bit $b$.
+
+	Then Alice send first bit of X as her random bit. Both do XOR the bits.
+	The communication protocol ensures that Bob can verify Alice's random string by computing the hash.
+
+	X should be long, otherwise Bob could brute force to check all possible hashes.
+\end{example}
+
+\begin{observation}
+	In many communication protocols hash functions and RNG are more important than ciphers.
+\end{observation}
+
+\begin{example}
+	Alice wants to participate in the auction. However, she could not do so in person. She chooses Bob as her representative.
+
+	An auction is public and it has a broadcast which cannot be changed by active attacker. Since public will notice.
+
+	Alice send 2 messages: Stop, Add <money>.
+
+	In every protocol design we should consider:
+	\begin{enumerate}
+		\item Against whom we are defending
+		\item For how long information should be secret.
+	\end{enumerate}
+
+	In the auction example, information should be secret for a couple of minutes maximum.
+	However, Alices actions should be kept secret before Bob acts on the auction. Otherwise other participants could do a perfect counter move.
+
+	A symmetric cipher will be used. We assume, that Alice and Bob met in person before the auction and exchanged the key.
+
+	Problems of the Protocol and the possible solutions:
+\begin{enumerate}
+
+	\item If the messages use the same encryption key several times or, length of messages is the same, Eve could distinguish Stop from Add.
+	Therefore, an \textbf{nonce} should be added to the message in order to make them the same length and prevent attacker from guessing using the length.
+
+	\item The difference in length between Stop and Add. To fix this, we add padding to every message making all messages the same fixed length.
+
+	\item Eve could sniff the message and check what were Bob's bid on the auction. Later she could use this message pretending to be Alice. Usually called \textbf{Replay attack}.
+	In order to protect the communication from replay attack, Alice will add a sequence number of the current message (monotonically increasing sequence).
+	If Bob receives the same sequence number twice, he considers it as an attack.
+
+	\item In practice, Eve could disable communication line for some time and resend all messages later. Timestamp could be a solution, however it requires a sync clock between parties. Which is hard to do secretly.
+
+	An alternative solution would be to add NOP (no operation) message and send messages periodically.
+
+	\item Mallory can randomly change bit in the Cipher text. For many good ciphers, altering one bit in the cipher text will result in 1 bit change in plain text.
+		To prevent that Alice should sign the message using \textbf{Message Authentication Code (MAC)}. The basic example of MAC creates $h(k_s | E_k(x))$, where $k_s$ is a new symmetric key.
+
+		As a result, hash of the message no longer match if Mallory changed some bits.
+	\item If Alice and Bob use same keys for the 2nd time, Eve could replay messages from the previous session. To prevent that they can use a different pair of keys every time.
+		Alternatively, a \textbf{session Id} could be added to the message. Should be a secret, known only to Alice and Bob. We can also choose session id as nonce and make it a parameter of MAC.
+
+	\end{enumerate}
+\end{example}
+
+\begin{observation}
+	Every part of the protocol could be attacked. Protocol is as strong as the weakest part.
+\end{observation}
+
+\begin{definition}
+	Authenticity - message was not changed during transfer.
+
+	Secrecy - no one decoded the plain text of the message.
+
+	In almost all cases, we want to combine both properties.
+\end{definition}
+
+\begin{observation}
+	Changing the encryption key for every message is generally no a good idea for several reasons.
+	First of all, an attacker has much smaller set of keys to check (entropy reduction).
+	Secondly, many RNGs require some hear up. For example, an RNG has to precompute some values.
+
+	We can however, derive key from single Master key. Later we will prove that adding \textbf{nonce} is as strong as changing the key.
+	Frequent change of keys makes protocol harder to analyze.
+\end{observation}
+
+\subsection{Types of attacks}
+
+\begin{example}
+	Known cipher text - an attacker knows cipher text and wants to recover the plain text from it.
+\end{example}
+
+\begin{example}
+	Known plain text - an attacker knows cipher text and plain text. He wants to recover the Key from them. Nonce are still not known, so only part of the plain text is known.
+\end{example}
+
+\begin{example}
+	Chosen plain text - an attacker chooses plain text and gives it to the victim for encryption. Goal is again to recover the key.
+\end{example}
+
+\begin{example}
+	Distinguishing attack - e.g. distinguish Stop and Add commands in the Auction protocol (by the length or other property of the cypher text).
+\end{example}
+
+How to measure strength of the cryptographic primitives. Quantification. For that we define security level (in bits).
+
+\begin{definition}
+	Security level - is the number of operations required to break some cryptographic primitive.
+	Ideally we want security level to be equal to the key length. Meaning that the attacker has to check all possible keys in order to break the primitive.
+
+	Security level of the good cryptographic primitive should be beyond computational power of any computer on the Earth.
+\end{definition}
+
+\begin{example}
+	\textbf{Birthday attack} - the security level of the primitive is only half of the expected.
+
+	For example, let's consider Challenge-response auth scheme.
+	The nonce used in the protocol has $b$ bits. One could expect the security level to be $2^b$.
+	Which is not true, because after $2^{b/2}$ the collision is likely to occur.
+
+	This attack is related to the so called \textbf{Birthday paradox}.
+	If there is 23 people in the room, the probability of the same birthday is actually $ \geq 1/2$.
+\end{example}
+
+\begin{theorem}[Birthday attack probability]
+	The probability of the repetitions in nonces is $e^{-\frac{n^2}{2m}}$.
+\end{theorem}
+\begin{proof}
+	Let's compute the probability that function $f:[n] \to [m]$ that generates nonces is injective. Where $n$ is number of runs, and $m$ is number of nonces.
+	Then probability of A is \# of injective functions over all functions
+	\[ Pr_f[A] = \frac{m(m-1)(m-2)...(m-n+1)}{m^n}\]
+	Because we choose 1 nonce every run, number of available nonces decreases by 1 every run. Then we rewrite the sum as
+	\[ \frac{m}{m} \frac{m-1}{m} ... \frac{m-n+1}{m} = 1 (1 - \frac{1}{m}) (1 - \frac{2}{m}) ...\]
+	According to Calculus, for small x: $1 - x \approx e^{-x}$.
+	\[ Pr_f[A] \approx 1 e^{-\frac{1}{m}} e^{-\frac{2}{m}} ... = e^{-\frac{1 + 2 + ... + n - 1}{m}} = e^{-\frac{n(n-1)}{2m}} \leq e^{-\frac{n^2}{2m}} \]
+
+	For what values of $n$ and $m$ the probability is $\frac{1}{2}$?
+	\[ e^{-\frac{n^2}{2m}} = 1/2 \Rightarrow \frac{n^2}{2m} = -2 \ln\left(\frac{1}{2}\right) \approx 1.39 \Rightarrow n^2 \approx m \]
+\end{proof}
+
+\begin{consequence}
+	Number of runs required to reach $\frac{1}{2}$ probability of collisions is $\sqrt{m}$. Therefore sequrity level of Challenge-response auth scheme is $2^{b/2}$.
+\end{consequence}
+
+
+\begin{example}
+	Assume Alice wants to send to Bob new private key, knowing his public asymmetric key $k_{pub}^B$. To do so, she encodes new key with Bobs key
+	\[ E_{asym}(k_{new}, k_{pub}^B) \]
+
+	Eve has access to $k_{pub}^B$, so she can guess a key $k_{g}$ and compare the results. By the assumption, $k_{new}$ is random, so guessing 1 key will not work.
+	More sophisticated approach is to precompute a huge set of Keys.
+	After some time, encrypted Key sent by Alice will be on of the precomputed one by Eve.
+	As a result, Eve would have both encrypted and plain text of the Key.
+\end{example}
+
+\begin{theorem}[Success of precomputed table]
+	Eve requires $tn \approx m$ (where $t$ is size of the precomputed table, $n$ is number of runs, $m$ is size of Keys set) to guess the key selected by Alice.
+	In other words, key selected by Alice will be in the precomputed subset by Eve.
+\end{theorem}
+\begin{proof}
+	Let's compute probability that random function $f$ generates a key that would not be in the precomputed subset.
+	\[ P_f[f\ avoids \ subset] = (1 - \frac{t}{m})^n \]
+	Since probability of $f$ hitting the subset is $\frac{t}{m}$ and key selection are independent.
+	By the same approximation as in previous theorem
+	\[ P_f[f\ avoids \ subset] = e^{-\frac{-tn}{m}} \Rightarrow tn \approx m \]
+
+	For example $t = n = \sqrt{m}$. Again security level is $\leq$ 1/2 \# of bits.
+\end{proof}
